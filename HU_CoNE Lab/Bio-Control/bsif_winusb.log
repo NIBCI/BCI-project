@@ -1,0 +1,8 @@
+bsif_open_driver called at Tue Jul 11 11:42:03 2017
+Device has 1 interfaces
+Size of detail device data is 84
+pBuffer->DevicePath '\\?\usb#vid_0547&pid_1005#6&14b00c3a&0&2#{894a7460-a034-11d2-821e-444553540008}'
+Size of DevicePath is 79
+CreateFile trouble 5 on '\\?\usb#vid_0547&pid_1005#6&14b00c3a&0&2#{894a7460-a034-11d2-821e-444553540008}'
+액세스가 거부되었습니다.
+
