@@ -16,17 +16,6 @@ from multiprocessing import Process, Pipe
 from socket import *
 from struct import *
 
-# Channel Names (1~32)
-# 1: Fp1, Fz, F3, F7,
-# 5: FT9, FC5, FC1, C3,
-# 9: T7, TP9, CP5, CP1,
-# 13: Pz, P3, P7, O1,
-# 17: Oz, O2, P4, P8,
-# 21: TP10, CP6, CP2, Cz,
-# 25: C4, T8, FT10, FC6,
-# 29: FC2, F4, F8, Fp2
-# reference_channel = [24]  # Cz for reference
-
 EEGdata_size = 60
 freq = 512
 total_ch = 31
