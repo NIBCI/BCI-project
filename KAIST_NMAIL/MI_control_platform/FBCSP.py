@@ -16,7 +16,7 @@ numChannels=31
 info=None
 # data: numpy.ndarray or list of dimension (epoch, channel, frequency)
 # label: numpy.ndarray or list of dimension (epoch)
-channel_names=['F5','FC5','C5','CP5','P5','FC3','C3','CP3','P3','F1','FC1','C1','CP1','P1','Cz','CPz','Pz','F2','FC2','C2','CP2','P2','FC4','C4','CP4','P4','F6','FC6','C6','CP6','P6']
+channel_names=[]
 
 class FBCSP:
     def __init__(self, augment=False,nChannels=31, frequency=500, chnames=None):
