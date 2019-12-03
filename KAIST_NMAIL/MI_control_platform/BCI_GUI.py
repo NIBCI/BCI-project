@@ -28,9 +28,9 @@ import os
 ip = "127.0.0.1"
 device_port = 14000
 model_port = 14100
-subject = "test"
+subject = "subject"
 
-channels =['F5','FC5','C5','CP5','P5','FC3','C3','CP3','P3','F1','FC1','C1','CP1','P1','Cz','CPz','Pz','F2','FC2','C2','CP2','P2','FC4','C4','CP4','P4','F6','FC6','C6','CP6','P6']
+channels =[]
 
 # Socket for communication with the device
 device_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -47,8 +47,8 @@ crecorder=None
 cfilename=None
 
 streamer_type=None
-nChannels=31
-frequency=512
+nChannels=0
+frequency=0
 def write_to_progress(words):
     global text1, text2
     text1.insert(END, words+"\n")
@@ -232,7 +232,7 @@ combo_streamer=Combobox(frame_EEG, values=streamer_type, state='readlonly')
 combo_streamer.current(0)
 label_chnames = Label(frame_EEG, text="Channel Names")
 entry_chnames = Text(frame_EEG)
-entry_chnames.insert(END, 'F5,FC5,C5,CP5,P5,FC3,C3,CP3,P3,F1,FC1,C1,CP1,P1,Cz,CPz,Pz,F2,FC2,C2,CP2,P2,FC4,C4,CP4,P4,F6,FC6,C6,CP6,P6')
+entry_chnames.insert(END, '')
 
 button_EEG=Button(frame_EEG, text="Confirm EEG Settings", command=EEG_settings)
 
