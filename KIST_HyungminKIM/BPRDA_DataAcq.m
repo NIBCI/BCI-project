@@ -123,7 +123,7 @@ while ~finish
                     
                     % collect(nope! replace preallocated data) raw and band pass filtered data
                     EEGData_raw(:,((counter_main-1)*10+1):(counter_main*10))= EEGData;
-                    EMGData_raw(:,((counter_main-1)*10+1):(counter_main*10))= EMGData;
+                    % EMGData_raw(:,((counter_main-1)*10+1):(counter_main*10))= EMGData; % No more Used (20201204)
                     MarkerData(:,((counter_main-1)*10+1):(counter_main*10))= MarkerData_temp;
                     counter_main = counter_main + 1;
                     
