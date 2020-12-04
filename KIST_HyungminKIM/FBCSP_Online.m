@@ -149,7 +149,7 @@ pause(6)
 disp('6/7. RoboWear10 is Ready.')
 
 % 8. Visual Feedback Image >> REPLACE unity 3D or sound feedback >>>> FIGURE no.1
-load('IMAGES.mat')
+load('IMAGES_R3.mat') % Updated 20200504
 figure(2); clf; imshow(VS.S_sit)
 disp('7/7. Feedback Images are Ready.')
 pause(1)
