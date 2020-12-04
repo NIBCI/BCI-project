@@ -2,6 +2,7 @@
 This code is for MI based exoskeleton control.
 
 by Ph.D Student Junhyuk Choi(h14505@kist.re.kr) 20191203
+by Master's Degree Student Jihyeok Jeong(t20193@kist.re.kr) 20201204
 KIST Center for Bionics, Neuro-Robotic LAB. 
 
 Proceedure..
