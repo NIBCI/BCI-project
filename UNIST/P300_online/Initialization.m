@@ -13,18 +13,16 @@ param.Fs                        = 500;
 param.dFs                       = 125;
 [pB, pA]                        = butter(2, [0.5 1]./(param.Fs/2),'bandpass');
 param.pBF                       = {pB, pA};
-
 [B,A]                           = butter(4, [0.5 12]./(param.Fs/2),'bandpass');
 param.BF                        = {B, A};
-
-
-[lB,lA]                           = butter(4, [12]./(param.Fs/2),'low');
-param.LF                        = {lB, lA};
-[hB,hA]                           = butter(4, 0.5./(param.Fs/2),'high');
+[hB,hA]                           = butter(4, [0.5]./(param.Fs/2),'high');
 param.HF                        = {hB, hA};
-[dB, dA]                       = butter(4, [50]./(param.Fs/2), 'low');
-param.dLF                       = {dB, dA};
+[dlB,dlA]                           = butter(4, [50]./(param.Fs/2),'low');
+param.dLF                        = {dlB, dlA};
+[lB,lA]                           = butter(4, [ 12]./(param.Fs/2),'low');
+param.LF                        = {lB, lA};
 
+param.prep_factor = [1:4];
 
 % param.BFFIR                     = fir1(param.Fs*3/0.1 , [0.1 100]./(param.Fs/2) , 'bandpass');
 param.Epoctime                  = 0.6;
@@ -32,7 +30,6 @@ param.Basetime                  = 0.2;
 param.Epocline                  = param.Epoctime * param.Fs;
 param.Baseline                  = param.Basetime * param.Fs;
 param.Totalepoc                 = param.Epocline + param.Baseline;
-param.Totaltrial                = param.Totalepoc*40 + 10*param.Fs;
 param.Time                      = -param.Basetime : 1/param.Fs : param.Epoctime-1/param.Fs;
 param.Numtrial                 = 0;
 
@@ -47,16 +44,12 @@ param.NumTeTrial                  = 30;
 
 param.decoder.mode              = 'training'; % 'training' : training decoder , 'testing' : testing decoder
 
-% portnum                         = 59999;
-% param.com.sys                   = tcpip('192.168.0.55', portnum);
-% fopen(param.com.sys);
 
-param.NumRep                    = 10;
 param.repeat = 10;
 param.NumStims                  = size(param.Stims,2);
 
 param.switch_on                 = false;
-param.nbchan                    = 31;
+
 
 param.H                         = figure(1); clf;
 set(param.H, 'color', 'w');
@@ -77,7 +70,7 @@ for i = 1:length(param.ChInitial)
 end
 
 
-set(gcf, 'Position', [200, 50, 1800, 1000])
+set(gcf, 'Position', [0, 0, 1000, 600])
 set(gcf,'PaperUnits','inches','PaperPosition',[0 0 16 10])
 
 param.Targ                      = [];

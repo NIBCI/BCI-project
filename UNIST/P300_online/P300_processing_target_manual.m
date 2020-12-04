@@ -1,4 +1,4 @@
-function [C, param]   = P300_processing(sig, trig, param)
+function [C, param]   = P300_processing_target_manual(sig, trig, param)
 global DS
 sig = sig*0.04883;
 try
@@ -10,11 +10,11 @@ else
     fprintf('Training start!..\n');
 end
 [sig, param]            = PreProcess(sig,param);
-EP                      = Epoching(sig, trig, param); 
+EP                      = Epoching_target_manual(sig, trig, param); 
 
 switch param.Stimtype
     case 'Single'
-        [C, param]      = FeatureExt_basic(EP, param);      
+        [C, param]      = FeatureExt_basic(EP, param);
 end
 
 % If iteration end but block not end,

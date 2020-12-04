@@ -17,7 +17,7 @@ param.HF                        = {hB, hA};
 param.dLF                        = {dlB, dlA};
 [lB,lA]                           = butter(4, [ 12]./(param.Fs/2),'low');
 param.LF                        = {lB, lA};
-param.repeat                    = 10; 
+
 param.prep_factor = [1:4];
 
 % param.BFFIR                     = fir1(param.Fs*3/0.1 , [0.1 100]./(param.Fs/2) , 'bandpass');
@@ -43,7 +43,7 @@ param.decoder.mode              = 'training'; % 'training' : training decoder , 
 param.channel.mode              = 'both'; 
 
 
-param.NumRep                    = 10;
+param.repeat = 10;
 param.NumStims                  = size(param.Stims,2);
 
 param.switch_on                 = false;
@@ -66,7 +66,7 @@ for i = 1:length(param.Ch)
 end
 
 
-set(gcf, 'Position', [200, 50, 1800, 1000])
+set(gcf, 'Position', [2000, 50, 1000, 600])
 set(gcf,'PaperUnits','inches','PaperPosition',[0 0 16 10])
 
 % param.h1                        = plot(nan,nan, 'parent',param.SH);

@@ -1,5 +1,7 @@
-function socket_sender(adress,out)
-   t = tcpip(adress, 1668, 'NetworkRole', 'client');
+function socket_sender(adress,port,out)
+% 최신 서버 (2020) port: 1668
+% BS용 서버 (2018) port: 23
+   t = tcpip(adress, port, 'NetworkRole', 'client');
     fopen(t);
     output = int2str(out);
     

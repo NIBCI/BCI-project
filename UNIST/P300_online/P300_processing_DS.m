@@ -1,4 +1,4 @@
-function [C, param]   = P300_processing(sig, trig, param)
+function [C, param]   = P300_processing_DS(sig, trig, param)
 global DS
 sig = sig*0.04883;
 try
@@ -10,7 +10,7 @@ else
     fprintf('Training start!..\n');
 end
 [sig, param]            = PreProcess(sig,param);
-EP                      = Epoching(sig, trig, param); 
+EP                      = Epoching_DS(sig, trig, param); 
 
 switch param.Stimtype
     case 'Single'

@@ -1,7 +1,7 @@
 function [sig,param] = PreProcess(sig,param)
 param.DoAsr = 'Y';
 
-% 0.5~ 50Hz filtering : avoid line noise & high frequency noise
+%% (essential) 0.5~ 50Hz filtering : avoid line noise & high frequency noise
 if isfield(param,'filterType') && strcmp(param.filterType,'FIR')
     lowcutoff = 0.5;
     df = 0.5;
@@ -28,8 +28,9 @@ fprintf('[1] 0.5Hz HPF .. Done \n')
 param.NumCh = size(sig,1);
 
 
-% clf(figure(10));
-if ismember(1,param.prep_factor) % 1: bad channel rejection
+clf(figure(10));
+%% 1: bad channel rejection
+if ismember(1,param.prep_factor) 
     if ~isfield(param,'badch') && ~strcmp(param.decoder.mode,'testing')
         badch = prebadchannelrejection(sig,param);
         fprintf('Bad channels: %d\n', badch);
@@ -40,12 +41,12 @@ if ismember(1,param.prep_factor) % 1: bad channel rejection
         param.Ch = param.Ch(~cellfun('isempty',param.Ch));
     end
     
-%     if ~isempty(param.badch)
-%         figure(10); subplot(2,2,1); plot(sig(param.badch(1),:)); drawnow
-%     else
-%         figure(10); subplot(2,2,1); plot(sig(1,:)); drawnow
-%     end
-%     
+    if ~isempty(param.badch)
+        figure(10); subplot(2,2,1); plot(sig(param.badch(1),:)); drawnow
+    else
+        figure(10); subplot(2,2,1); plot(sig(1,:)); drawnow
+    end
+    %
     fprintf('[2] Bad channel Rejection .. Done \n');
     
     if isfield(param,'interp')
@@ -57,24 +58,24 @@ if ismember(1,param.prep_factor) % 1: bad channel rejection
             param.NumCh = size(sig,1);
         end
     else
-%         if ~isempty(param.badch)
-%             hold on;
-%             plot(sig(param.badch(1),:));
-%         else
-%             hold on;
-%             plot(sig(1,:));
-%         end
+        if ~isempty(param.badch)
+            hold on;
+            plot(sig(param.badch(1),:));
+        else
+            hold on;
+            plot(sig(1,:));
+        end
         sig(param.badch,:) = [];
-         param.NumCh = size(sig,1);
-
+        param.NumCh = size(sig,1);
+        
     end
 end
 
-
-if ismember(2,param.prep_factor) % 3: CAR & REST
-%     figure(10); subplot(2,2,2); plot(sig(1,:)); hold on;drawnow
+%% 2: CAR & REST
+if ismember(2,param.prep_factor) 
+    figure(10); subplot(2,2,2); plot(sig(1,:)); hold on;drawnow
     sig = sig - repmat(mean(sig,1),size(sig,1),1);
-    %     figure(10); subplot(2,2,3); plot(sig(1,:));drawnow
+        figure(10); subplot(2,2,3); plot(sig(1,:));drawnow
     fprintf('[3] CAR .. Done  \n');
     
     %%% REST %%%
@@ -103,20 +104,20 @@ if ismember(2,param.prep_factor) % 3: CAR & REST
     %
     %     end
     hold on;
-%     plot(sig(1,:));
+    plot(sig(1,:));
     % % % %     interpolationÀ» ÇØ¾ß!
     
     
 end
-
+%% (essential) LP filtering (50Hz)
 if isfield(param,'filterType') && strcmp(param.filterType,'FIR')
-    %     figure;
-    %     plot(sig(1,:))
+    figure;
+    plot(sig(1,:))
     hicutoff = 50;
     
     TRANSWIDTHRATIO = 0.25;
     % Lowpass and bandpass
-    df = 30*TRANSWIDTHRATIO;
+    df = hicutoff*TRANSWIDTHRATIO;
     
     cutoffArray = hicutoff + df / 2;
     
@@ -128,15 +129,15 @@ if isfield(param,'filterType') && strcmp(param.filterType,'FIR')
     %%%
     b = firws(filtorder, cutoffArray / (param.Fs/2), winArray);
     sig = filtfilt(b,1,sig')';
-    %     hold on; plot(sig(1,:));
+    hold on; plot(sig(1,:));
 else
     sig = filtfilt(param.dLF{1}, param.dLF{2}, double(sig)')'; %180213 updated: default filtering  50Hz
 end
 fprintf('[4] 50Hz LPF .. Done \n')
 
-
-if ismember(3, param.prep_factor) % 3: ASR
-%     figure(10); subplot(2,2,3); plot(sig(1,:)); hold on;drawnow
+%% 3: ASR
+if ismember(3, param.prep_factor) 
+    figure(10); subplot(2,2,3); plot(sig(1,:)); hold on;drawnow
     if (isfield(param,'filterType') && strcmp(param.filterType,'FIR'))...
             ||(isfield(param,'cal') && strcmp(param.cal,'on'))
         
@@ -149,14 +150,17 @@ if ismember(3, param.prep_factor) % 3: ASR
         
     else
         if ~strcmp(param.decoder.mode,'testing')
-          
-                    load([param.dir,'/cal_sig.mat']);
-                
+            
+            load([param.dir,'/cal_sig.mat']);
+            
             param = preASR(cal_sig,param);
+            %         ref = clean_windows_MJ(sig,param.Fs);
+            %         param.state = asr_calibrate(ref,param.Fs,param.cutoff);
+            
         end
         try
             switch param.DoAsr
-                case 'Y'                 
+                case 'Y'
                     sigout = ASR(sig,param);
                     fprintf('ASR is done..!\n');
                 case 'N'
@@ -170,20 +174,20 @@ if ismember(3, param.prep_factor) % 3: ASR
     end
     
     sig = sigout;
-%     figure(10); subplot(2,2,3); plot(sigout(1,:)); drawnow
+    figure(10); subplot(2,2,3); plot(sigout(1,:)); drawnow
     fprintf('[5] Artifact rejection .. Done \n')
     
 end
-
-if ismember(4,param.prep_factor) % 4: filtering
-%     figure(10); subplot(2,2,4); plot(sig(1,:)); hold on;drawnow
+%% 4: LP filtering (12Hz)
+if ismember(4,param.prep_factor) 
+    figure(10); subplot(2,2,4); plot(sig(1,:)); hold on;drawnow
     
     if isfield(param,'filterType') && strcmp(param.filterType,'FIR')
         hicutoff =12;
         
         TRANSWIDTHRATIO = 0.25;
         % Lowpass and bandpass
-        df = 30*TRANSWIDTHRATIO;
+        df = hicutoff*TRANSWIDTHRATIO;
         
         cutoffArray = hicutoff + df / 2;
         
@@ -198,7 +202,7 @@ if ismember(4,param.prep_factor) % 4: filtering
     else
         sig = filtfilt(param.LF{1},param.LF{2},sig')';
     end
-%     figure(10); subplot(2,2,4); plot(sig(1,:)); drawnow
+    figure(10); subplot(2,2,4); plot(sig(1,:)); drawnow
     fprintf('[6] 12Hz LPF .. Done \n');
 end
 
