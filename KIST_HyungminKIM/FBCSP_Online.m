@@ -1,16 +1,18 @@
 function FBCSP_Online
-% this code is 2 class in 2 state problem.
+% this code is 2 class in 3 state problem.
 % 1st binary class problem in "stand ready" state (standup or donothing), 
 % 2nd binary class problem in "gait ready" state (gait or sitdown).
+% 3nd binary class problem in "turn ready" state (left or right). Updated 20200504
 % (We should adopt 3 class problem in gait ready state)
 % robot command output is commented out
 % + 20190915 triple eye blink is not robust
 % + 20191119 2and2class, ver2 consist of one + two binary classes
+% + 20200504 2class, left/right binary classes
 % one in sit MI: gait vs. donothing
 % the other in stand MI: gait vs. donothing + sit vs. donothing
 % in stand MI, the possible output is gait(1), donothing(0), sit(2)
-%
-% 20191119 JHC 
+% the new in stand MI: left vs. right
+% 20191119 JHC & 20200227 JJH & 20200504 JHC 
 
 clc
 close all
@@ -38,6 +40,8 @@ drop_size = 2;
 Buffer_gait = 0;
 Buffer_stand = 0;
 Buffer_sit = 0;
+Buffer_left = 0; % Updated 20200504
+Buffer_right = 0;% Updated 20200504
 
 % 3. Design filter! JH needs five parameters with initial Buffer
 % Here is the 7 bands: 7-9 10-12 13-15 16-20 21-25 26-34 Hz
@@ -48,12 +52,16 @@ filterparameter(3,:) = [ 10    13    15    18    5  ];
 filterparameter(4,:) = [ 12    16    20    24    5  ];
 filterparameter(5,:) = [ 17    21    25    29    5  ];
 filterparameter(6,:) = [ 18    26    34    42    5  ];
+filterparameter(7,:) = [ 70    80    90    100   5  ]; % Updated 20200504 
+filterparameter(8,:) = [ 80    90    100   110   5  ]; % Updated 20200504 
+filterparameter(9,:) = [ 90    100   110   120   5  ]; % Updated 20200504 
 for i = 1:size(filterparameter,1)
     iirbp = designfilt('bandpassiir', 'StopbandFrequency1', filterparameter(i,1), 'PassbandFrequency1', filterparameter(i,2), 'PassbandFrequency2', filterparameter(i,3), 'StopbandFrequency2', filterparameter(i,4), 'StopbandAttenuation1', 25, 'PassbandRipple', filterparameter(i,5), 'StopbandAttenuation2', 25, 'SampleRate', 500, 'MatchExactly', 'passband');
     eval(['[Bb' num2str(i) ', Ba' num2str(i) '] = sos2tf(iirbp.Coefficients);'])
     eval(['buffer' num2str(i) ' = zeros(size(Bb' num2str(i) ',2)-1, channumb);'])
 end
-band_L = size(filterparameter,1); 
+band_L = size(filterparameter,1)-3; % Updated 20200504 
+band_L2 = size(filterparameter,1);  % Updated 20200504 
 % check visualize if needed isstable(iirbp.Coefficients); fvtool(iirbp);
 disp('1/7. Filters are Ready.')
 pause(1)
@@ -62,12 +70,16 @@ pause(1)
 CSP_pick = 2;
 load sX_train1.mat % X_train = number of Trial X (band(8) X 4), best_features
 load sX_train2.mat % X_train = number of Trial X (band(8) X 4), best_features
+load sX_train3.mat % X_train = number of Trial X (band(8) X 4), best_features % Updated 20200504 
 load sY_train1.mat % Y_train = band(8) X 4, label (0 or 1) no MI or MI
 load sY_train2.mat % Y_train = band(8) X 4, label (0 or 1) no MI or MI
+load sY_train3.mat % Y_train = band(8) X 4, label (0 or 1) no MI or MI % Updated 20200504 
 load sz_W1.mat % z_W CSP
 load sz_W2.mat % z_W CSP
+load sz_W3.mat % z_W CSP % Updated 20200504
 load sbest_rank_save1.mat % save all, and pick here.
 load sbest_rank_save2.mat % save all, and pick here.
+load sbest_rank_save3.mat % save all, and pick here. % Updated 20200504
 % for gait vs. dnth
 best_rank1 = sort(ranking_mibif1([1 2])); % pick top n features.. 
 best_features1 = best_rank1; % separate to 8 band
@@ -86,6 +98,15 @@ for best_N = 1:band_L-1
 end; best_feature2{band_L} = best_rank2;
 clear best_rank best_N best_rank_save
 SVMModel2 = fitcsvm(X_train2(:,best_features2),Y_train2); % Make SVM model
+% for left vs. right % Updated 20200504 
+best_rank3 = sort(ranking_mibif3([1 2 3 4])); % pick top n features.. 
+best_features3 = best_rank3; % separate to 8 band
+for best_N = 1:band_L2-1 % Updated 20200504 
+    best_feature3{best_N} = best_rank3(find(best_rank3 < best_N*CSP_pick*2+1));
+    best_rank3(find(best_rank3 < best_N*CSP_pick*2+1)) = [];
+end; best_feature3{band_L} = best_rank3;
+clear best_rank best_N best_rank_save
+SVMModel3 = fitcsvm(X_train3(:,best_features3),Y_train3); % Make SVM model
 disp('2/7. Model is Loaded.')
 pause(1)
 
@@ -97,6 +118,7 @@ TEBbuffer = zeros(size(Bb_EOG,2)-1, 1); clearvars iirbp i filterparamter
 TEBWindowSize = 800;
 TEBWindowShift = 200;
 TEBthreshold = 3000;
+global EB_time; EB_time = 0; % Updated 20200227 
 warning('off')
 [y,Fs] = audioread('beep.mp3'); % soundfile variation declare
 beep = audioplayer(y,Fs); pause(0.1)
@@ -192,7 +214,7 @@ while ~finish
                                 TEBdata = data_raw(1,end-TEBWindowSize+1:end);
                                 [TEB, TEBbuffer] = findTEB(Bb_EOG, Ba_EOG, TEBdata, TEBbuffer, TEBthreshold);
                             end
-                            if TEB == 1
+                            if TEB == 3
                                 play(beep);
                                 STATE = 4;
                                 TEB = 0;
@@ -211,9 +233,15 @@ while ~finish
                                 TEBdata = data_raw(1,end-TEBWindowSize+1:end);
                                 [TEB, TEBbuffer] = findTEB(Bb_EOG, Ba_EOG, TEBdata, TEBbuffer, TEBthreshold);
                             end
-                            if TEB == 1
+                            if TEB == 3
                                 play(beep);
                                 STATE = 5;
+                                TEB = 0;
+                                counter = 0;
+                                data_raw = [];
+                            elseif TEB = 5 % Updated 20200504
+                                play(beep);
+                                STATE = 10;
                                 TEB = 0;
                                 counter = 0;
                                 data_raw = [];
@@ -231,7 +259,7 @@ while ~finish
                                 TEBdata = data_raw(1,end-TEBWindowSize+1:end);
                                 [TEB, TEBbuffer] = findTEB(Bb_EOG, Ba_EOG, TEBdata, TEBbuffer, TEBthreshold);
                             end
-                            if TEB == 1
+                            if TEB == 3
                                 play(beep);
                                 STATE = 9;
                                 TEB = 0;
@@ -370,6 +398,62 @@ while ~finish
                             end
                             end
                             clear data_csp var_data_csp test_model
+                            
+                        case 10 % stand ready. DO SA!! (Left vs Right) Updated 20200504
+                            if counter == 0
+                                figure(1); patch(x,y,'y'); text(-0.6,0,'Ready','fontsize',40,'color','w');
+                                figure(2); clf; imshow(VS.S_ready)
+                            end
+                            counter = counter + 10/MainWindowShift;
+                            %  SA in STAND Updated 20200504
+                            if size(data_raw,2) >= MainWindowSize && mod(size(data_raw,2),MainWindowShift) == 0
+                                datain = data_raw(:,end-MainWindowSize+1:end);
+                                size_L = 0;
+                                for band_i = 1:band_L2 % Updated 20200504
+                                    if ~isempty(best_feature3{band_i})
+                                        eval(['[data_filt_tmp, buffer' num2str(band_i) '] = filter(Bb' num2str(band_i) ', Ba' num2str(band_i) ', datain, buffer' num2str(band_i) ',2);'])
+                                        data_csp(1+size_L:size_L+length(best_feature3{band_i}),:) = z_W_3(best_feature3{band_i},:)*data_filt_tmp;
+                                        size_L = size_L + length(best_feature3{band_i});
+                                        clear data_filt_tmp
+                                    end
+                                end
+                                var_data_csp = var(data_csp'); % data_csp dimension: comp * time >> variance: numb. of comp
+                                test_model = log10(var_data_csp/sum(var_data_csp));
+                                svmclass = predict(SVMModel3,test_model); % classification % Updated 20200504
+                            
+                            % fill buffer [left(3) vs. right(4)]
+                            if svmclass == 3 % left. onset buffer filled one by one
+                                Buffer_left = Buffer_left+1;
+                                if Buffer_right > 4
+                                    Buffer_right = Buffer_right - drop_size; % onset buffer dumpted in size of three
+                                else
+                                    Buffer_right = 0;
+                                end
+                            else % right.
+                                Buffer_right = Buffer_right+1;
+                                if Buffer_left > 4
+                                    Buffer_left = Buffer_left - drop_size; % onset buffer dumpted in size of three
+                                else
+                                    Buffer_left = 0;
+                                end
+                            end
+                            eval(['figure(2); clf; imshow(VS.C3_' num2str(Buffer_left) '_' num2str(Buffer_right) ')'])
+                            disp(['Buffer_left: ' num2str(Buffer_left) '/10'])
+                            disp(['Buffer_right: ' num2str(Buffer_right) '/10'])
+                            if Buffer_left == onset_size
+                                STATE = 11;
+                                Buffer_left = 0; % dump
+                                counter = 0;
+                                data_raw = [];
+                            end
+                            if Buffer_right == onset_size
+                                STATE = 12;
+                                Buffer_right = 0; % dump
+                                counter = 0;
+                                data_raw = [];
+                            end
+                            end
+                            clear data_csp var_data_csp test_model svmclass
 
                         case 6 % [ACT] sit to stand
                             figure(1); patch(x,y,'k'); text(-0.6,0,'Stand UP','fontsize',40,'color','w');
@@ -396,8 +480,20 @@ while ~finish
                         case 9 % [ACT] gait to stand
                             figure(1); patch(x,y,'k'); text(-0.6,0,'Stop','fontsize',40,'color','w');
                             figure(2); clf; imshow(VS.S_stand)
-                            fwrite(RoboWear10,71,'uchar'); pause(0.5) % stop
+                            fwrite(RoboWear10,67,'uchar'); pause(0.5) % stop % Updated 20200504
                             STATE = 2;
+                            data_raw = [];
+                        case 11 % [ACT] stand to left gait % Updated 20200504
+                            figure(1); patch(x,y,'k'); text(-0.6,0,'LT','fontsize',40,'color','w');
+                            figure(2); clf; imshow(VS.A_LT)
+                            fwrite(RoboWear10,71,'uchar'); pause(0.5) % left turn
+                            STATE = 3;
+                            data_raw = [];
+                        case 12 % [ACT] stand to right gait % Updated 20200504
+                            figure(1); patch(x,y,'k'); text(-0.6,0,'RT','fontsize',40,'color','w');
+                            figure(2); clf; imshow(VS.A_RT)
+                            fwrite(RoboWear10,72,'uchar'); pause(0.5) % right turn
+                            STATE = 3;
                             data_raw = [];
                     end
                     
@@ -564,16 +660,38 @@ end
 % end
 % end
 
-function [TEB, TEBbuffer] = findTEB(Bb, Ba, TEBdata, TEBbuffer, TEBthreshold)
+function [TEB, TEBbuffer] = findTEB(Bb, Ba, TEBdata, TEBbuffer, TEBthreshold)  % Updated 20200227
+global EB_time; % Updated 20200227
 [data_TEB_filt, TEBbuffer] = filter(Bb, Ba, TEBdata, TEBbuffer, 2);
 CW_Fp1 = cwt(data_TEB_filt,30,'bior1.3');
 [~,locs] = findpeaks(CW_Fp1,'MinPeakHeight', TEBthreshold);
-if sum(locs < 150) ~= 0
-    locs(locs < 150) = [];
+if sum(locs < 100) ~= 0
+    locs(locs < 100) = [];
 end
-if size(locs,2) >= 3
-    TEB = 1;
+TEB = optionEB(locs); % Updated 20200227
+EB_time = EB_time + 1;
+end
+
+function TEB = optionEB(locs)   % Updated 20200227
+global EB_time;
+peaknum = size(locs,2);
+if sum (locs > 800) ~= 0
+    peaknum = 0;
+elseif sum(diff(locs) > 200) ~= 0   % Updated 20200809
+    peaknum = 0;                    
+elseif sum(diff(locs) < 50) ~= 0    % Updated 20200811
+    peaknum = 0;                    
+end
+% TEB Detection
+if peaknum >= 3 && peaknum < 5 && EB_time > 5
+    TEB = 3;
+    EB_time = 0;
+%  QEB Detection
+elseif peaknum >= 5 && EB_time > 5
+    TEB = 5;
+    EB_time = 0;
 else
     TEB = 0;
 end
+% disp(EB)
 end
